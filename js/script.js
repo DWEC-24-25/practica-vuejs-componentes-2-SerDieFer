@@ -1,3 +1,5 @@
+const { createApp, defineComponent, reactive } = Vue;
+
 // Sample data
 const server_data = {
     collection: {
@@ -56,7 +58,7 @@ const ItemData = defineComponent({
         }
     },
     template: `
-        <div>
+        <div class="card p-3 mb-3">
             <h3>{{ item.data.find(d => d.name === 'name').value }}</h3>
             <p>{{ item.data.find(d => d.name === 'description').value }}</p>
             <p><strong>Director:</strong> {{ item.data.find(d => d.name === 'director').value }}</p>
@@ -70,11 +72,16 @@ const ItemData = defineComponent({
 const app = createApp({
     setup() {
         const col = reactive(server_data.collection);
-
-        return {
-            col
-        };
-    }
+        return { col };
+    },
+    template: `
+        <div>
+            <h1 class="text-center my-4">{{ col.title }}</h1>
+            <div v-for="item in col.items" :key="item.href">
+                <item-data :item="item"></item-data>
+            </div>
+        </div>
+    `
 });
 
 // Registrar los componentes globalmente
