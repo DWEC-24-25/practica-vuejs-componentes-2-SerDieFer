@@ -39,98 +39,118 @@ const server_data = {
     }
 };
 
+// ---------------------------------------------------------------------------
 // Componente edit-form
+// Este componente muestra un formulario de edición para los datos del ítem.
+// Cada campo se genera a partir del array 'itemdata', y se asigna un id único usando el
+// índice del ítem (prop index) y el nombre del campo.
+// ---------------------------------------------------------------------------
 const EditForm = defineComponent({
-    props: {
-        itemdata: {
-            type: Array,
-            required: true
-        },
-        index: {
-            type: Number,
-            required: false
-        }
+props: {
+    itemdata: {
+    type: Array,
+    required: true
     },
-    emits: ['formClosed'],
-    setup(props, { emit }) {
-        const closeForm = () => {
-            emit('formClosed');
-        };
-        return { closeForm };
-    },
-    template: `
-    <div>
-        <h2>Edit Form</h2>
-        <form>
-            <div v-for="(field, i) in itemdata" :key="i" class="mb-3">
-                <label :for="'input-' + index + '-' + field.name" class="form-label">{{ field.prompt }}</label>
-                <input type="text" class="form-control" :id="'input-' + index + '-' + field.name" v-model="field.value">
-            </div>
-            <button type="button" class="btn btn-primary" @click="closeForm">Close</button>
-        </form>
+    index: {
+    type: Number,
+    required: false
+    }
+},
+emits: ['formClosed'],
+setup(props, { emit }) {
+
+    // Método para cerrar el formulario que emite el evento 'formClosed'
+    const closeForm = () => {
+    emit('formClosed');
+    };
+    return { closeForm };
+},
+template: `
+<div>
+    <h2>Edit Form</h2>
+    <form>
+    <div v-for="(field, i) in itemdata" :key="i" class="mb-3">
+        <label :for="'input-' + index + '-' + field.name" class="form-label">{{ field.prompt }}</label>
+        <input type="text" class="form-control" :id="'input-' + index + '-' + field.name" v-model="field.value">
     </div>
-    `
+    <button type="button" class="btn btn-primary" @click="closeForm">Cerrar</button>
+    </form>
+</div>
+`
 });
 
+// ---------------------------------------------------------------------------
 // Componente item-data
+// Este componente muestra los datos de la película y alterna entre el bloque de listado y el bloque de edición.
+// ---------------------------------------------------------------------------
 const ItemData = defineComponent({
-    props: {
-        item: {
-            type: Object,
-            required: true
-        },
-        index: {
-            type: Number,
-            required: false
-        }
+props: {
+    item: {
+    type: Object,
+    required: true
     },
-    setup(props) {
-        const isEditing = ref(false);
+    index: {
+    type: Number,
+    required: false
+    }
+},
+setup(props) {
+    // Variable reactiva que controla si se muestra el formulario de edición.
+    const isEditing = ref(false);
 
-        const toggleEditFormVisibility = () => {
-            isEditing.value = !isEditing.value;
-        };
+    // Método para alternar la visibilidad entre la vista de listado y el formulario de edición.
+    const toggleEditFormVisibility = () => {
+    isEditing.value = !isEditing.value;
+    };
 
-        const getValue = (fieldName) => {
-            const field = props.item.data.find(d => d.name === fieldName);
-            return field ? field.value : '';
-        };
+    // Función auxiliar para obtener el valor de un campo a partir de su nombre.
+    const getValue = (fieldName) => {
+    const field = props.item.data.find(d => d.name === fieldName);
+    return field ? field.value : '';
+    };
 
-        return { isEditing, toggleEditFormVisibility, getValue };
-    },
-    template: `
-    <div class="card mb-4">
-        <div class="card-body">
-            <template v-if="!isEditing">
-                <h5 class="card-title">{{ getValue('name') }}</h5>
-                <p class="card-text">{{ getValue('description') }}</p>
-                <p><strong>Director:</strong> {{ getValue('director') }}</p>
-                <p><strong>Release Date:</strong> {{ getValue('datePublished') }}</p>
-                <a :href="item.href" class="btn btn-primary me-2" target="_blank">View</a>
-                <button class="btn btn-secondary" @click="toggleEditFormVisibility">Edit</button>
-            </template>
-            <template v-else>
-                <edit-form :itemdata="item.data" :index="index" @formClosed="toggleEditFormVisibility" />
-            </template>
-        </div>
+    return { isEditing, toggleEditFormVisibility, getValue };
+},
+template: `
+<div class="card mb-4">
+    <div class="card-body">
+    <template v-if="!isEditing">
+        <h5 class="card-title">{{ getValue('name') }}</h5>
+        <p class="card-text">{{ getValue('description') }}</p>
+        <p><strong>Director:</strong> {{ getValue('director') }}</p>
+        <p><strong>Release Date:</strong> {{ getValue('datePublished') }}</p>
+        <a :href="item.href" class="btn btn-primary me-2" target="_blank">Ver</a>
+        <button class="btn btn-secondary" @click="toggleEditFormVisibility">Editar</button>
+    </template>
+    <template v-else>
+        <edit-form :itemdata="item.data" :index="index" @formClosed="toggleEditFormVisibility" />
+    </template>
     </div>
-    `
+</div>
+`
 });
 
+// ---------------------------------------------------------------------------
 // Crear la aplicación Vue
+// ---------------------------------------------------------------------------
 const app = createApp({
-    setup() {
-        const col = reactive(server_data.collection);
-        return { col };
-    },
-    template: `
-        <div>
-            <h1 class="text-center my-4">{{ col.title }}</h1>
-            <div v-for="item in col.items" :key="item.href">
-                <item-data :item="item"></item-data>
-            </div>
-        </div>
-    `
+setup() {
+    // Se utiliza reactive para que Vue gestione la reactividad de la colección.
+    const col = reactive(server_data.collection);
+    return { col };
+},
+template: `
+<div class="container-fluid">
+<div class="jumbotron card bg-secondary mb-4">
+    <h1 id="title" class="text-center text-white p-4">{{ col.title }}</h1>
+</div>
+<div class="row row-cols-1 row-cols-md-3 mb-4 g-4">
+    <div class="col d-flex" v-for="(item, index) in col.items" :key="index">
+    <item-data class="card h-100 w-100" :item="item" :index="index" />
+    </div>
+</div>
+</div>
+`
 });
 
 // Registrar los componentes globalmente
