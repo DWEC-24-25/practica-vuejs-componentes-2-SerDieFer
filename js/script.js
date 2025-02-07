@@ -1,4 +1,4 @@
-const { createApp, defineComponent, reactive } = Vue;
+const { createApp, defineComponent, reactive, ref } = Vue;
 
 // Sample data
 const server_data = {
@@ -41,11 +41,34 @@ const server_data = {
 
 // Componente edit-form
 const EditForm = defineComponent({
+    props: {
+        itemdata: {
+            type: Array,
+            required: true
+        },
+        index: {
+            type: Number,
+            required: false
+        }
+    },
+    emits: ['formClosed'],
+    setup(props, { emit }) {
+        const closeForm = () => {
+            emit('formClosed');
+        };
+        return { closeForm };
+    },
     template: `
-        <div>
-            <h2>Edit Form</h2>
-            <!-- Aquí iría el formulario de edición -->
-        </div>
+    <div>
+        <h2>Edit Form</h2>
+        <form>
+            <div v-for="(field, i) in itemdata" :key="i" class="mb-3">
+                <label :for="'input-' + index + '-' + field.name" class="form-label">{{ field.prompt }}</label>
+                <input type="text" class="form-control" :id="'input-' + index + '-' + field.name" v-model="field.value">
+            </div>
+            <button type="button" class="btn btn-primary" @click="closeForm">Close</button>
+        </form>
+    </div>
     `
 });
 
@@ -55,16 +78,42 @@ const ItemData = defineComponent({
         item: {
             type: Object,
             required: true
+        },
+        index: {
+            type: Number,
+            required: false
         }
     },
+    setup(props) {
+        const isEditing = ref(false);
+
+        const toggleEditFormVisibility = () => {
+            isEditing.value = !isEditing.value;
+        };
+
+        const getValue = (fieldName) => {
+            const field = props.item.data.find(d => d.name === fieldName);
+            return field ? field.value : '';
+        };
+
+        return { isEditing, toggleEditFormVisibility, getValue };
+    },
     template: `
-        <div class="card p-3 mb-3">
-            <h3>{{ item.data.find(d => d.name === 'name').value }}</h3>
-            <p>{{ item.data.find(d => d.name === 'description').value }}</p>
-            <p><strong>Director:</strong> {{ item.data.find(d => d.name === 'director').value }}</p>
-            <p><strong>Release Date:</strong> {{ item.data.find(d => d.name === 'datePublished').value }}</p>
-            <a :href="item.href" target="_blank">More Info</a>
+    <div class="card mb-4">
+        <div class="card-body">
+            <template v-if="!isEditing">
+                <h5 class="card-title">{{ getValue('name') }}</h5>
+                <p class="card-text">{{ getValue('description') }}</p>
+                <p><strong>Director:</strong> {{ getValue('director') }}</p>
+                <p><strong>Release Date:</strong> {{ getValue('datePublished') }}</p>
+                <a :href="item.href" class="btn btn-primary me-2" target="_blank">View</a>
+                <button class="btn btn-secondary" @click="toggleEditFormVisibility">Edit</button>
+            </template>
+            <template v-else>
+                <edit-form :itemdata="item.data" :index="index" @formClosed="toggleEditFormVisibility" />
+            </template>
         </div>
+    </div>
     `
 });
 
